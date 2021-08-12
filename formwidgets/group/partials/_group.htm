@@ -1,0 +1,4 @@
+<?php foreach ($this->allFields as $field): ?>
+    <?php $field->spanClass = $field->spanClass ?? 'form-widget-group';?>
+    <?= $this->makePartial('modules/backend/widgets/form/partials/field-container', ['field' => $field]) ?>
+<?php endforeach ?>

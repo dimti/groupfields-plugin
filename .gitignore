@@ -1,0 +1,13 @@
+# vendor
+/vendor
+
+# ide
+nbproject
+.vscode
+.idea
+
+# bash
+/*.sh
+
+# mac
+.DS_Store
