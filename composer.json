@@ -1,7 +1,22 @@
 {
-    "name": "dimti/groupfields-plugin",
+    "name": "dimti/oc-groupfields-plugin",
     "type": "october-plugin",
-    "description": "No description provided yet...",
+    "description": "Group fields in backend forms",
+    "keywords": [
+        "october",
+        "cms",
+        "group",
+        "fields",
+        "backend",
+        "plugin"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alexander Demidov",
+            "email": "demidov@dimti.ru"
+        }
+    ],
     "require": {
         "composer/installers": "~1.0"
     }
