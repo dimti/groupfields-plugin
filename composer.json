@@ -1,5 +1,5 @@
 {
-    "name": "dimti/oc-groupfields-plugin",
+    "name": "dimti/groupfields-plugin",
     "type": "october-plugin",
     "description": "Group fields in backend forms",
     "keywords": [
