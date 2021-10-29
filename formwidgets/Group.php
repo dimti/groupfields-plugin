@@ -98,21 +98,27 @@ class Group extends FormWidgetBase
 
                 $fieldValues = array_intersect_key(post($this->formField->arrayName, []), $this->fields);
 
-                foreach ($this->fields as $name => $config) {
-                    if (!starts_with($name, '_') && array_key_exists($name, $fieldValues)) {
+                foreach ($this->fields as $fieldName => $config) {
+                    if (!starts_with($fieldName, '_') && array_key_exists($fieldName, $fieldValues)) {
                         if (!$this->model->exists ||
-                            array_key_exists($name, $this->model->attributes) ||
-                            $this->model->hasGetMutator($name) ||
-                            $this->model->hasRelation($name)
+                            array_key_exists($fieldName, $this->model->attributes) ||
+                            $this->model->hasGetMutator($fieldName) ||
+                            $this->model->hasRelation($fieldName)
                         ) {
-                            if (array_key_exists($name, $this->model->attributes)) {
-                                $this->model->attributes[$name] = $fieldValues[$name];
+                            if (array_key_exists($fieldName, $this->model->attributes)) {
+                                if ($this->model->isJsonable($fieldName) && (!empty($fieldValues[$fieldName]) || is_array($fieldValues[$fieldName]))) {
+                                    $fieldValues[$fieldName] = json_encode($fieldValues[$fieldName]);
+                                }
+
+                                $this->model->attributes[$fieldName] = $fieldValues[$fieldName];
                             } else {
-                                $this->model->{$name} = $fieldValues[$name];
+                                $this->model->{$fieldName} = $fieldValues[$fieldName];
                             }
                         }
                     }
                 }
+
+                $b = '';
             }
         }, 10);
     }
