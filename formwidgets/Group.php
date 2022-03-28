@@ -125,8 +125,16 @@ class Group extends FormWidgetBase
 
     protected function defineFields()
     {
-        foreach ( $this->fields as $name => $config) {
-            if (!array_key_exists('context', $config) || $config['context'] == $this->parentForm->context) {
+        foreach ($this->fields as $name => $config) {
+            $skipField = false;
+
+            if ($config !== null && is_array($config)) {
+                if (array_key_exists('context', $config) && $config['context'] != $this->parentForm->context) {
+                    $skipField = true;
+                }
+            }
+
+            if (!$skipField) {
                 $this->allFields[$name] = $this->makeFormField($name, $config);
             }
         }
