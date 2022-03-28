@@ -1,11 +1,10 @@
 <?php namespace Dimti\GroupFields\FormWidgets;
 
 use ApplicationException;
-use Backend\Classes\Controller;
 use Backend\Classes\FormField;
 use Backend\Classes\FormWidgetBase;
 use Backend\Classes\WidgetManager;
-use Dimti\Mirsporta\Controllers\Products;
+use Backend\Widgets\Form;
 use Lang;
 use October\Rain\Html\Helper as HtmlHelper;
 use Form as FormHelper;
@@ -92,11 +91,21 @@ class Group extends FormWidgetBase
 
         $preventBeforeSetAttributeEvent = false;
 
+        $this->model->bindEvent('model.form.filterFields', function (\Backend\Widgets\Form $formWidget, $fields, string $context) {
+            $b = '';
+        });
+
         $this->model->bindEvent('model.beforeSetAttribute', function ($attributes, $options) use (&$preventBeforeSetAttributeEvent) {
             if (!$preventBeforeSetAttributeEvent) {
                 $preventBeforeSetAttributeEvent = true;
 
                 $fieldValues = array_intersect_key(post($this->formField->arrayName, []), $this->fields);
+
+                $viewWidget = $this->controller->relationGetViewWidget();
+
+                if ($viewWidget) {
+                    assert($viewWidget instanceof Form);
+                }
 
                 foreach ($this->fields as $fieldName => $config) {
                     if (!starts_with($fieldName, '_') && array_key_exists($fieldName, $fieldValues)) {
@@ -114,11 +123,15 @@ class Group extends FormWidgetBase
                             } else {
                                 $this->model->{$fieldName} = $fieldValues[$fieldName];
                             }
+
+                            if ($viewWidget) {
+                                $viewWidget->setFormValues([
+                                    $fieldName => $fieldValues[$fieldName]
+                                ]);
+                            }
                         }
                     }
                 }
-
-                $b = '';
             }
         }, 10);
     }
