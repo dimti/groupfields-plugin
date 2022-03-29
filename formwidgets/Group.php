@@ -1,6 +1,7 @@
 <?php namespace Dimti\GroupFields\FormWidgets;
 
 use ApplicationException;
+use Backend\Behaviors\RelationController;
 use Backend\Classes\FormField;
 use Backend\Classes\FormWidgetBase;
 use Backend\Classes\WidgetManager;
@@ -91,20 +92,20 @@ class Group extends FormWidgetBase
 
         $preventBeforeSetAttributeEvent = false;
 
-        $this->model->bindEvent('model.form.filterFields', function (\Backend\Widgets\Form $formWidget, $fields, string $context) {
-            $b = '';
-        });
-
         $this->model->bindEvent('model.beforeSetAttribute', function ($attributes, $options) use (&$preventBeforeSetAttributeEvent) {
             if (!$preventBeforeSetAttributeEvent) {
                 $preventBeforeSetAttributeEvent = true;
 
                 $fieldValues = array_intersect_key(post($this->formField->arrayName, []), $this->fields);
 
-                $viewWidget = $this->controller->relationGetViewWidget();
+                $viewWidget = null;
 
-                if ($viewWidget) {
-                    assert($viewWidget instanceof Form);
+                if ($this->controller->isClassExtendedWith(RelationController::class)) {
+                    $viewWidget = $this->controller->relationGetViewWidget();
+
+                    if ($viewWidget) {
+                        assert($viewWidget instanceof Form);
+                    }
                 }
 
                 foreach ($this->fields as $fieldName => $config) {
