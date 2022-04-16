@@ -102,10 +102,6 @@ class Group extends FormWidgetBase
 
                 if ($this->controller->isClassExtendedWith(RelationController::class)) {
                     $viewWidget = $this->controller->relationGetViewWidget();
-
-                    if ($viewWidget) {
-                        assert($viewWidget instanceof Form);
-                    }
                 }
 
                 foreach ($this->fields as $fieldName => $config) {
@@ -125,7 +121,7 @@ class Group extends FormWidgetBase
                                 $this->model->{$fieldName} = $fieldValues[$fieldName];
                             }
 
-                            if ($viewWidget) {
+                            if ($viewWidget instanceof Form) {
                                 $viewWidget->setFormValues([
                                     $fieldName => $fieldValues[$fieldName]
                                 ]);
