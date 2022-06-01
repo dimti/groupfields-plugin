@@ -106,12 +106,29 @@ class Group extends FormWidgetBase
 
                 foreach ($this->fields as $fieldName => $config) {
                     if (!starts_with($fieldName, '_') && array_key_exists($fieldName, $fieldValues)) {
+                        $isAttributeExistsInModel = false;
+
+                        $isSettingsModel = $this->model->isClassExtendedWith('System.Behaviors.SettingsModel');
+
+                        if (array_key_exists($fieldName, $this->model->attributes)) {
+                            $isAttributeExistsInModel = true;
+                        } elseif ($isSettingsModel) {
+                            /**
+                             * $this->fieldName = group name with underscoure
+                             */
+                            if (array_key_exists($this->fieldName, $this->model->attributes)) {
+                                if (array_key_exists($fieldName, $this->model->attributes[$this->fieldName])) {
+                                    $isAttributeExistsInModel = true;
+                                }
+                            }
+                        }
+
                         if (!$this->model->exists ||
-                            array_key_exists($fieldName, $this->model->attributes) ||
+                            $isAttributeExistsInModel ||
                             $this->model->hasGetMutator($fieldName) ||
                             $this->model->hasRelation($fieldName)
                         ) {
-                            if (array_key_exists($fieldName, $this->model->attributes)) {
+                            if (!$isSettingsModel && array_key_exists($fieldName, $this->model->attributes)) {
                                 if ($this->model->isJsonable($fieldName) && (!empty($fieldValues[$fieldName]) || is_array($fieldValues[$fieldName]))) {
                                     $fieldValues[$fieldName] = json_encode($fieldValues[$fieldName]);
                                 }
