@@ -79,9 +79,10 @@ class Group extends FormWidgetBase
                         continue;
                     }
 
+                    /**
+                     * @var $fieldObject FormWidgetBase|FormField
+                     */
                     $fieldObject = $this->allFields[$field];
-
-                    assert($fieldObject instanceof FormWidgetBase);
 
                     $evenResults['#' . $fieldObject->getId('group')] = $this->makePartial('field', ['field' => $fieldObject]);
                 }
