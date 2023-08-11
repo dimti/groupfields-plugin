@@ -54,6 +54,8 @@ class Group extends FormWidgetBase
 
         $this->viewPath = 'modules/backend/widgets/form/partials/';
 
+        $this->updateModelAttributeValuesFromPostData();
+
         $this->defineFields();
 
         \Event::listen('backend.form.beforeRefresh', function ($form, $dataHolder) {
@@ -97,58 +99,65 @@ class Group extends FormWidgetBase
             if (!$preventBeforeSetAttributeEvent) {
                 $preventBeforeSetAttributeEvent = true;
 
-                $fieldValues = array_intersect_key(post($this->formField->arrayName, []), $this->fields);
+                $this->updateModelAttributeValuesFromPostData();
+            }
+        }, 10);
+    }
 
-                $viewWidget = null;
+    private function updateModelAttributeValuesFromPostData()
+    {
+        $fieldValues = array_intersect_key(post($this->formField->arrayName, []), $this->fields);
 
-                if ($this->controller->isClassExtendedWith(RelationController::class)) {
-                    $viewWidget = $this->controller->relationGetViewWidget();
-                }
+        $viewWidget = null;
 
-                foreach ($this->fields as $fieldName => $config) {
-                    if (!starts_with($fieldName, '_') && array_key_exists($fieldName, $fieldValues)) {
-                        $isAttributeExistsInModel = false;
+        if ($this->controller->isClassExtendedWith(RelationController::class)) {
+            $viewWidget = $this->controller->relationGetViewWidget();
+        }
 
-                        $isSettingsModel = $this->model->isClassExtendedWith('System.Behaviors.SettingsModel');
+        foreach ($this->fields as $fieldName => $config) {
+            if (!starts_with($fieldName, '_') && array_key_exists($fieldName, $fieldValues)) {
+                $isAttributeExistsInModel = false;
 
-                        if (array_key_exists($fieldName, $this->model->attributes)) {
+                $isSettingsModel = $this->model->isClassExtendedWith('System.Behaviors.SettingsModel');
+
+                if (array_key_exists($fieldName, $this->model->attributes)) {
+                    $isAttributeExistsInModel = true;
+                } elseif ($isSettingsModel) {
+                    /**
+                     * $this->fieldName = group name with underscoure
+                     */
+                    if (array_key_exists($this->fieldName, $this->model->attributes)) {
+                        if (array_key_exists($fieldName, $this->model->attributes[$this->fieldName])) {
                             $isAttributeExistsInModel = true;
-                        } elseif ($isSettingsModel) {
-                            /**
-                             * $this->fieldName = group name with underscoure
-                             */
-                            if (array_key_exists($this->fieldName, $this->model->attributes)) {
-                                if (array_key_exists($fieldName, $this->model->attributes[$this->fieldName])) {
-                                    $isAttributeExistsInModel = true;
-                                }
-                            }
-                        }
-
-                        if (!$this->model->exists ||
-                            $isAttributeExistsInModel ||
-                            $this->model->hasGetMutator($fieldName) ||
-                            $this->model->hasRelation($fieldName)
-                        ) {
-                            if (!$isSettingsModel && array_key_exists($fieldName, $this->model->attributes)) {
-                                if ($this->model->isJsonable($fieldName) && (!empty($fieldValues[$fieldName]) || is_array($fieldValues[$fieldName]))) {
-                                    $fieldValues[$fieldName] = json_encode($fieldValues[$fieldName]);
-                                }
-
-                                $this->model->attributes[$fieldName] = $fieldValues[$fieldName];
-                            } else {
-                                $this->model->{$fieldName} = $fieldValues[$fieldName];
-                            }
-
-                            if ($viewWidget instanceof Form) {
-                                $viewWidget->setFormValues([
-                                    $fieldName => $fieldValues[$fieldName]
-                                ]);
-                            }
                         }
                     }
                 }
+
+                if (!$this->model->exists ||
+                    $isAttributeExistsInModel ||
+                    $this->model->hasGetMutator($fieldName) ||
+                    $this->model->hasRelation($fieldName)
+                ) {
+                    if (!$isSettingsModel && array_key_exists($fieldName, $this->model->attributes)) {
+                        if ($this->model->isJsonable($fieldName) && (!empty($fieldValues[$fieldName]) || is_array($fieldValues[$fieldName]))) {
+                            $fieldValues[$fieldName] = json_encode($fieldValues[$fieldName]);
+                        }
+
+                        $this->model->attributes[$fieldName] = $fieldValues[$fieldName];
+                    } else {
+                        $this->model->{$fieldName} = $fieldValues[$fieldName];
+                    }
+                    $this->model->attributes['site_id'] = 1;
+                    $this->model->site_id = 1;
+                    if ($viewWidget instanceof Form) {
+                        $viewWidget->setFormValues([
+                            'site_id' => 1,
+                            $fieldName => $fieldValues[$fieldName]
+                        ]);
+                    }
+                }
             }
-        }, 10);
+        }
     }
 
     protected function defineFields()
@@ -276,7 +285,8 @@ class Group extends FormWidgetBase
          * Defined field type
          */
         else {
-            $fieldType = isset($config['type']) ? $config['type'] : null;
+            $fieldType = $config['type'] ?? null;
+
             if (!is_string($fieldType) && !is_null($fieldType)) {
                 throw new \ApplicationException(Lang::get(
                     'backend::lang.field.invalid_type',
@@ -289,6 +299,7 @@ class Group extends FormWidgetBase
              */
             if ($this->isFormWidget($fieldType) !== false) {
                 $config['widget'] = $fieldType;
+
                 $fieldType = 'widget';
             }
 
@@ -319,8 +330,10 @@ class Group extends FormWidgetBase
              * Defer the execution of option data collection
              */
             $field->options(function () use ($field, $config) {
-                $fieldOptions = isset($config['options']) ? $config['options'] : null;
+                $fieldOptions = $config['options'] ?? null;
+
                 $fieldOptions = $this->getOptionsFromModel($field, $fieldOptions);
+
                 return $fieldOptions;
             });
         }
@@ -334,6 +347,7 @@ class Group extends FormWidgetBase
      * @param $field
      * @param $fieldOptions
      * @return mixed
+     * @throws ApplicationException
      */
     protected function getOptionsFromModel($field, $fieldOptions)
     {
@@ -359,6 +373,7 @@ class Group extends FormWidgetBase
             }
 
             $methodName = 'get'.studly_case($attribute).'Options';
+
             if (
                 !$this->objectMethodExists($model, $methodName) &&
                 !$this->objectMethodExists($model, 'getDropdownOptions')
@@ -572,11 +587,12 @@ class Group extends FormWidgetBase
         if (isset($field->config['options'])) {
             $field->options(function () use ($field) {
                 $fieldOptions = $field->config['options'];
+
                 if ($fieldOptions === true) {
                     $fieldOptions = null;
                 }
-                $fieldOptions = $this->getOptionsFromModel($field, $fieldOptions);
-                return $fieldOptions;
+
+                return $this->getOptionsFromModel($field, $fieldOptions);
             });
         }
 
