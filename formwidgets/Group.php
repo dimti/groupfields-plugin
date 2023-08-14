@@ -147,11 +147,9 @@ class Group extends FormWidgetBase
                     } else {
                         $this->model->{$fieldName} = $fieldValues[$fieldName];
                     }
-                    $this->model->attributes['site_id'] = 1;
-                    $this->model->site_id = 1;
+
                     if ($viewWidget instanceof Form) {
                         $viewWidget->setFormValues([
-                            'site_id' => 1,
                             $fieldName => $fieldValues[$fieldName]
                         ]);
                     }
